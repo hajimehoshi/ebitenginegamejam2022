@@ -51,10 +51,10 @@ func (t *TitleScene) Draw(screen *ebiten.Image) {
 	})
 
 	for i, line := range []string{"Manual", "Linear", "Motor", "Car"} {
-		f := robotoBold
+		f := spaceAge
 		r := text.BoundString(f, line)
 		x := (sw - r.Dx()) / 2 - r.Min.X
 		y := 144 + 144 * i
-		text.Draw(screen, line, robotoBold, x, y, color.White)
+		text.Draw(screen, line, f, x, y, color.White)
 	}
 }

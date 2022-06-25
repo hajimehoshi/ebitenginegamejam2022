@@ -14,10 +14,12 @@ import (
 //go:embed resource
 var resource embed.FS
 
-var robotoBold font.Face
+var (
+	spaceAge   font.Face
+)
 
 func init() {
-	bs, err := resource.ReadFile(path.Join("resource", "Roboto-Bold.ttf"))
+	bs, err := resource.ReadFile(path.Join("resource", "spaceage.otf"))
 	if err != nil {
 		panic(err)
 	}
@@ -34,5 +36,5 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	robotoBold = face
+	spaceAge = face
 }
