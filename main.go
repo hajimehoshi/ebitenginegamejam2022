@@ -4,67 +4,53 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-type Pole int
+type SceneSwitcher interface {
+	SwitchToGameScene()
+}
 
-const (
-	PoleN Pole = iota
-	PoleS
-)
-
-func (p Pole) String() string {
-	switch p {
-	case PoleN:
-		return "N"
-	case PoleS:
-		return "S"
-	default:
-		panic("invalid pole")
-	}
+type Scene interface {
+	Update(sceneSwitcher SceneSwitcher) error
+	Draw(screen *ebiten.Image)
 }
 
 type Game struct {
-	pole Pole
-	x    int // [mm]
-	v    int // [m/h]
+	scene     Scene
+	nextScene Scene
 }
 
 func (g *Game) Update() error {
-	switch {
-	case g.pole == PoleN && inpututil.IsKeyJustPressed(ebiten.KeyS):
-		g.pole = PoleS
-		g.v += 25000
-	case g.pole == PoleS && inpututil.IsKeyJustPressed(ebiten.KeyN):
-		g.pole = PoleN
-		g.v += 25000
-	default:
-		g.v -= 5000
+	if g.nextScene != nil {
+		g.scene = g.nextScene
+		g.nextScene = nil
 	}
-	if g.v < 0 {
-		g.v = 0
+	if err := g.scene.Update(g); err != nil {
+		return err
 	}
-	g.x += g.v * 1e3 / 3600 / ebiten.MaxTPS()
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	msg := fmt.Sprintf("Press S and N alternately!\nCurrent Pole: %s\nVelocity: %d.%03d [km/h]\nPosition: %d.%03d [m]", g.pole, g.v / 1000, g.v % 1000, g.x / 1000, g.x % 1000)
-	ebitenutil.DebugPrint(screen, msg)
+	g.scene.Draw(screen)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return outsideWidth, outsideHeight
+	return 1920, 1080
+}
+
+func (g *Game) SwitchToGameScene() {
+	g.nextScene = &GameScene{}
 }
 
 func main() {
+	ebiten.SetWindowSize(960, 540)
 	ebiten.SetWindowTitle("Manual Linear Motor Car")
-	if err := ebiten.RunGame(&Game{}); err != nil {
+	g := &Game{
+		scene: &TitleScene{},
+	}
+	if err := ebiten.RunGame(g); err != nil {
 		panic(err)
 	}
 }
