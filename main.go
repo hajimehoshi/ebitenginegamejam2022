@@ -31,30 +31,30 @@ func (p Pole) String() string {
 
 type Game struct {
 	pole Pole
-	x    int
-	v    int
+	x    int // [mm]
+	v    int // [m/h]
 }
 
 func (g *Game) Update() error {
 	switch {
 	case g.pole == PoleN && inpututil.IsKeyJustPressed(ebiten.KeyS):
 		g.pole = PoleS
-		g.v += 5
+		g.v += 25000
 	case g.pole == PoleS && inpututil.IsKeyJustPressed(ebiten.KeyN):
 		g.pole = PoleN
-		g.v += 5
+		g.v += 25000
 	default:
-		g.v--
+		g.v -= 5000
 	}
 	if g.v < 0 {
 		g.v = 0
 	}
-	g.x += g.v
+	g.x += g.v * 1e3 / 3600 / ebiten.MaxTPS()
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	msg := fmt.Sprintf("Press S and N alternately!\nCurrent Pole: %s\nVelocity: %d\nPosition: %d", g.pole, g.v, g.x)
+	msg := fmt.Sprintf("Press S and N alternately!\nCurrent Pole: %s\nVelocity: %d.%03d [km/h]\nPosition: %d.%03d [m]", g.pole, g.v / 1000, g.v % 1000, g.x / 1000, g.x % 1000)
 	ebitenutil.DebugPrint(screen, msg)
 }
 
