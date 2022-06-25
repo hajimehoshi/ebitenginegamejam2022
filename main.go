@@ -53,6 +53,7 @@ func main() {
 	ebiten.SetWindowSize(960, 540)
 	ebiten.SetWindowTitle("Manual Linear Motor Car")
 	ebiten.SetMaxTPS(120)
+	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeOnlyFullscreenEnabled)
 	g := &Game{
 		scene: &SplashScene{},
 	}
