@@ -12,8 +12,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
-//go:embed titlebg.kage
-var titlebgKage []byte
+//go:embed bg.kage
+var bgKage []byte
 
 type titleSceneState int
 
@@ -35,7 +35,7 @@ type TitleScene struct {
 
 func (t *TitleScene) Update(sceneSwitcher SceneSwitcher) error {
 	if t.bgShader == nil {
-		s, err := ebiten.NewShader(titlebgKage)
+		s, err := ebiten.NewShader(bgKage)
 		if err != nil {
 			return err
 		}
@@ -58,7 +58,7 @@ func (t *TitleScene) Update(sceneSwitcher SceneSwitcher) error {
 		t.counter--
 		if t.counter <= 0 {
 			t.state = titleSceneStateBgFadeIn
-			t.counterMax = ebiten.MaxTPS() / 2
+			t.counterMax = ebiten.MaxTPS()
 			t.counter = t.counterMax
 		}
 	case titleSceneStateBgFadeIn:
