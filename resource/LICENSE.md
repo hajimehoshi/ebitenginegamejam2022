@@ -48,3 +48,9 @@ CONTACT
 -------
 Email: mouse@mickeyavenue.com
 ```
+
+# `splash_1920x1080_black.png`
+
+ * https://github.com/hajimehoshi/ebiten
+
+The Ebitengine logo by Hajime Hoshi is licensed under the Creative Commons Attribution-NoDerivatives 4.0.

@@ -8,6 +8,7 @@ import (
 )
 
 type SceneSwitcher interface {
+	SwitchToTitleScene()
 	SwitchToGameScene()
 }
 
@@ -40,6 +41,10 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return 1920, 1080
 }
 
+func (g *Game) SwitchToTitleScene() {
+	g.nextScene = &TitleScene{}
+}
+
 func (g *Game) SwitchToGameScene() {
 	g.nextScene = &GameScene{}
 }
@@ -47,8 +52,9 @@ func (g *Game) SwitchToGameScene() {
 func main() {
 	ebiten.SetWindowSize(960, 540)
 	ebiten.SetWindowTitle("Manual Linear Motor Car")
+	ebiten.SetMaxTPS(120)
 	g := &Game{
-		scene: &TitleScene{},
+		scene: &SplashScene{},
 	}
 	if err := ebiten.RunGame(g); err != nil {
 		panic(err)

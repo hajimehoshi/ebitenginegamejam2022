@@ -5,21 +5,38 @@ package main
 
 import (
 	"embed"
-	"path"
+	"io"
+	"io/fs"
 
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 )
 
 //go:embed resource
-var resource embed.FS
+var resourceRootFS embed.FS
+
+var resourceFS fs.FS
+
+func init() {
+	f, err := fs.Sub(resourceRootFS, "resource")
+	if err != nil {
+		panic(err)
+	}
+	resourceFS = f
+}
 
 var (
 	spaceAge   font.Face
 )
 
 func init() {
-	bs, err := resource.ReadFile(path.Join("resource", "spaceage.otf"))
+	f, err := resourceFS.Open("spaceage.otf")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	bs, err := io.ReadAll(f)
 	if err != nil {
 		panic(err)
 	}
