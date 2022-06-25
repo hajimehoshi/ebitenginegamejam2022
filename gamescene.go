@@ -44,7 +44,7 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 		g.pole = PoleN
 		g.v += 25000
 	default:
-		g.v -= 5000
+		g.v -= 2500
 	}
 	if g.v < 0 {
 		g.v = 0
