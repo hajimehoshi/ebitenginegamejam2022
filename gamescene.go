@@ -54,6 +54,6 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 }
 
 func (g *GameScene) Draw(screen *ebiten.Image) {
-	msg := fmt.Sprintf("Press S and N alternately!\nCurrent Pole: %s\nVelocity: %d.%03d [km/h]\nPosition: %d.%03d [m]", g.pole, g.v / 1000, g.v % 1000, g.x / 1000, g.x % 1000)
+	msg := fmt.Sprintf("Press S and N alternately!\nCurrent Pole: %s\nVelocity: %d.%03d [km/h]\nPosition: %d.%03d [m]", g.pole, g.v/1000, g.v%1000, g.x/1000, g.x%1000)
 	ebitenutil.DebugPrint(screen, msg)
 }

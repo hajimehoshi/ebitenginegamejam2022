@@ -26,7 +26,7 @@ func init() {
 }
 
 var (
-	spaceAge   font.Face
+	spaceAge font.Face
 )
 
 func init() {
