@@ -114,10 +114,12 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 			alpha = 1 - float32(g.counter)/float32(g.counterMax)
 		}
 		t := float32(g.gameState.PositionInMillimeter()) / 1000.0
+		v := float32(g.gameState.VelocityInMeterPerHour()) / 1000.0
 		screen.DrawRectShader(sw, sh, g.bgShader, &ebiten.DrawRectShaderOptions{
 			Uniforms: map[string]any{
-				"Time":  t,
-				"Alpha": alpha,
+				"Pos":      t,
+				"Velocity": v,
+				"Alpha":    alpha,
 			},
 		})
 	}

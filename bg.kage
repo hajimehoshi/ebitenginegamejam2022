@@ -4,8 +4,9 @@
 package main
 
 var (
-	Time  float
-	Alpha float
+	Pos      float
+	Velocity float
+	Alpha    float
 )
 
 const Pi = 3.14159265358979323846264338327950288419716939937511
@@ -22,8 +23,10 @@ func Fragment(position vec4, texCoord vec2, color vec4) vec4 {
 	pos.y *= aspect
 	// Determine the color.
 	l := length(pos)
-	s := sin(1/l + Time*2*Pi)
+	s := sin(1/l + Pos*2*Pi)
 	c := vec4((s/2+0.4)*min(1, l*4), 0, (-s/2+0.4)*min(1, l*4), 1)
 	c *= Alpha
+	v := clamp(log(Velocity)/20, 0, 1)
+	c += vec4(v, v, 0, 1)
 	return c
 }
