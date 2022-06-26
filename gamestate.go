@@ -88,7 +88,7 @@ func (g *GameState) Update() error {
 		}
 	}
 	if g.mode != GameStateModeResetting {
-		g.x += g.v * 1e3 / 3600 / ebiten.MaxTPS()
+		g.x += g.v * 1e3 / (3600 * ebiten.MaxTPS())
 	}
 	if g.counter > 0 {
 		g.counter--
