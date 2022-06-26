@@ -119,6 +119,7 @@ func (g *GameState) Start() {
 	if !g.CanStart() {
 		return
 	}
+	g.pole = PoleS
 	g.mode = GameStateModePlay
 	g.counter = ebiten.MaxTPS() * 20
 	g.lastX = 0
