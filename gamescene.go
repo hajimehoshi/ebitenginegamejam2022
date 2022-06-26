@@ -24,7 +24,8 @@ const (
 	gameSceneStateLogoFadeIn
 	gameSceneStateLogoWait
 	gameSceneStateBgFadeIn
-	gameSceneStateWait
+	gameSceneStateTitleWait
+	gameSceneStateGameCountDown
 )
 
 type GameScene struct {
@@ -67,11 +68,21 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 	case gameSceneStateBgFadeIn:
 		g.counter--
 		if g.counter <= 0 {
-			g.state = gameSceneStateWait
+			g.state = gameSceneStateTitleWait
 		}
-	case gameSceneStateWait:
-		if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) {
-			return nil
+	case gameSceneStateTitleWait:
+		if g.counter > 0 {
+			g.counter--
+		}
+		if !g.gameState.IsResetting() {
+			if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) {
+				g.gameState.Reset()
+				g.counterMax = ebiten.MaxTPS() / 2
+				g.counter = g.counterMax
+			}
+		}
+		if g.gameState.CanStart() && g.counter <= 0 {
+			g.state = gameSceneStateGameCountDown
 		}
 	}
 	g.gameState.Update()
@@ -84,7 +95,7 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 	}
 
 	switch g.state {
-	case gameSceneStateBgFadeIn, gameSceneStateWait:
+	case gameSceneStateBgFadeIn, gameSceneStateTitleWait, gameSceneStateGameCountDown:
 		sw, sh := screen.Size()
 		alpha := float32(1)
 		switch g.state {
@@ -100,23 +111,32 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 		})
 	}
 
-	sw, sh := screen.Size()
-	alpha := 1.0
 	switch g.state {
-	case gameSceneStateLogoFadeIn:
-		alpha = 1 - float64(g.counter)/float64(g.counterMax)
-	}
-	clr := color.RGBA{byte(0xff * alpha), byte(0xff * alpha), byte(0xff * alpha), byte(0xff * alpha)}
-	for i, line := range []string{"Manual", "Linear", "Motor", "Car"} {
-		f := spaceAgeBig
-		r := text.BoundString(f, line)
-		x := (sw-r.Dx())/2 - r.Min.X
-		y := 144 + 144*i
-		text.Draw(screen, line, f, x, y, clr)
+	case gameSceneStateLogoFadeIn, gameSceneStateLogoWait, gameSceneStateBgFadeIn, gameSceneStateTitleWait:
+		sw, _ := screen.Size()
+		alpha := 1.0
+		switch g.state {
+		case gameSceneStateLogoFadeIn:
+			alpha = 1 - float64(g.counter)/float64(g.counterMax)
+		case gameSceneStateTitleWait:
+			if g.gameState.IsResetting() {
+				alpha = float64(g.counter) / float64(g.counterMax)
+			}
+		}
+		clr := color.RGBA{byte(0xff * alpha), byte(0xff * alpha), byte(0xff * alpha), byte(0xff * alpha)}
+		for i, line := range []string{"Manual", "Linear", "Motor", "Car"} {
+			f := spaceAgeBig
+			r := text.BoundString(f, line)
+			x := (sw-r.Dx())/2 - r.Min.X
+			y := 144 + 144*i
+			text.Draw(screen, line, f, x, y, clr)
+		}
 	}
 
+	// Render the position and the velocity.
 	switch g.state {
-	case gameSceneStateWait:
+	case gameSceneStateTitleWait, gameSceneStateGameCountDown:
+		sw, sh := screen.Size()
 		f := spaceAgeSmall
 		r := text.BoundString(f, "km/h")
 		offsetY := 32

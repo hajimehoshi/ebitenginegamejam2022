@@ -27,14 +27,22 @@ func (p Pole) String() string {
 }
 
 type GameState struct {
-	pole Pole
-	x    int // [mm]
-	v    int // [m/h]
-	vFixed bool
+	pole     Pole
+	x        int // [mm]
+	v        int // [m/h]
+	vFixed   bool
+	resetting bool
+}
+
+func max(a, b int) int {
+	if a < b {
+		return b
+	}
+	return a
 }
 
 func (g *GameState) Update() error {
-	if !g.vFixed {
+	if !g.vFixed && !g.resetting {
 		switch {
 		case g.pole == PoleN && inpututil.IsKeyJustPressed(ebiten.KeyS):
 			g.pole = PoleS
@@ -49,7 +57,14 @@ func (g *GameState) Update() error {
 			g.v = 0
 		}
 	}
-	g.x += g.v * 1e3 / 3600 / ebiten.MaxTPS()
+	if g.resetting {
+		g.x -= max(5, g.x / ebiten.MaxTPS())
+		if g.x < 0 {
+			g.x = 0
+		}
+	} else {
+		g.x += g.v * 1e3 / 3600 / ebiten.MaxTPS()
+	}
 	return nil
 }
 
@@ -57,6 +72,20 @@ func (g *GameState) StartFixedVelocity() {
 	g.x = 0
 	g.v = 1000
 	g.vFixed = true
+	g.resetting = false
+}
+
+func (g *GameState) Reset() {
+	g.vFixed = false
+	g.resetting = true
+}
+
+func (g *GameState) IsResetting() bool {
+	return g.resetting
+}
+
+func (g *GameState) CanStart() bool {
+	return g.resetting == true && g.x == 0
 }
 
 func (g *GameState) VelocityInMeterPerHour() int {
