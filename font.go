@@ -59,7 +59,7 @@ func init() {
 	}
 	{
 		face, err := opentype.NewFace(font, &opentype.FaceOptions{
-			Size: 72,
+			Size: 108,
 			DPI:  72,
 		})
 		if err != nil {

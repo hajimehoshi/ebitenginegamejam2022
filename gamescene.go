@@ -5,7 +5,9 @@ package main
 
 import (
 	_ "embed"
+	"fmt"
 	"image/color"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -30,7 +32,7 @@ type GameScene struct {
 	bgShader   *ebiten.Shader
 	counter    int
 	counterMax int
-	time       int
+	gameState  GameState
 }
 
 func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
@@ -60,6 +62,7 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 			g.state = gameSceneStateBgFadeIn
 			g.counterMax = ebiten.MaxTPS()
 			g.counter = g.counterMax
+			g.gameState.StartFixedVelocity()
 		}
 	case gameSceneStateBgFadeIn:
 		g.counter--
@@ -71,7 +74,7 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 			return nil
 		}
 	}
-	g.time++
+	g.gameState.Update()
 	return nil
 }
 
@@ -88,15 +91,16 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 		case gameSceneStateBgFadeIn:
 			alpha = 1 - float32(g.counter)/float32(g.counterMax)
 		}
+		t := float32(g.gameState.PositionInMillimeter()) / 1000.0
 		screen.DrawRectShader(sw, sh, g.bgShader, &ebiten.DrawRectShaderOptions{
 			Uniforms: map[string]any{
-				"Time":  float32(g.time) / float32(ebiten.MaxTPS()),
+				"Time":  t,
 				"Alpha": alpha,
 			},
 		})
 	}
 
-	sw, _ := screen.Size()
+	sw, sh := screen.Size()
 	alpha := 1.0
 	switch g.state {
 	case gameSceneStateLogoFadeIn:
@@ -109,5 +113,43 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 		x := (sw-r.Dx())/2 - r.Min.X
 		y := 144 + 144*i
 		text.Draw(screen, line, f, x, y, clr)
+	}
+
+	switch g.state {
+	case gameSceneStateWait:
+		f := spaceAgeSmall
+		r := text.BoundString(f, "km/h")
+		offsetY := 32
+		baseX := sw - (r.Dx() + r.Min.X)
+		for i, line := range []string{"km", "km/h"} {
+			x := baseX - 48
+			y := sh - 72*i - offsetY
+			text.Draw(screen, line, f, x, y, color.White)
+		}
+
+		v := g.gameState.VelocityInMeterPerHour()
+		vstr := fmt.Sprintf("%d.%03d", v/1000, v%1000)
+		p := g.gameState.PositionInMillimeter()
+		pstr := fmt.Sprintf("%d.%03d", p/1000, p%1000)
+		for j, line := range []string{pstr, vstr} {
+			op := &ebiten.DrawImageOptions{}
+			dotIndex := strings.Index(line, ".")
+			for i, glyph := range text.AppendGlyphs(nil, f, line) {
+				op.GeoM.Reset()
+				const digitWidth = 108
+				x := float64(baseX + (digitWidth-glyph.Image.Bounds().Dx())/2 - 72)
+				switch {
+				case i < dotIndex:
+					x += float64(digitWidth*i + digitWidth*3/4 - digitWidth*len(line))
+				case i == dotIndex:
+					x += float64(digitWidth*i + digitWidth*3/8 - digitWidth*len(line))
+				default:
+					x += float64(digitWidth*i - digitWidth*len(line))
+				}
+				y := float64(sh-72*j-offsetY) + glyph.Y
+				op.GeoM.Translate(x, y)
+				screen.DrawImage(glyph.Image, op)
+			}
+		}
 	}
 }
