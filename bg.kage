@@ -26,7 +26,7 @@ func Fragment(position vec4, texCoord vec2, color vec4) vec4 {
 	s := sin(1/l + Pos*2*Pi)
 	c := vec4((s/2+0.4)*min(1, l*4), 0, (-s/2+0.4)*min(1, l*4), 1)
 	c *= Alpha
-	v := clamp(log2(Velocity)/20, 0, 1)
-	c += vec4(v, v, 0, 1)
+	v := clamp(log(Velocity)/40, 0, 1)
+	c += vec4(v, v, 0, 0)
 	return c
 }
