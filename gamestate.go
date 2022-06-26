@@ -41,6 +41,8 @@ type GameState struct {
 	v       int // [m/h]
 	mode    GameStateMode
 	counter int
+	lastX   int
+	topV    int
 }
 
 func max(a, b int) int {
@@ -68,11 +70,17 @@ func (g *GameState) Update() error {
 		}
 	case GameStateModeResetting:
 		g.v = 0
-		g.x -= max(5, g.x/ebiten.MaxTPS())
+		g.x -= max(10, g.x/(ebiten.MaxTPS()/2))
 		if g.x < 0 {
 			g.x = 0
 		}
 	case GameStateModeDemo:
+		if g.v > 1000 {
+			g.v -= 2500
+		}
+		if g.v < 1000 {
+			g.v = 1000
+		}
 	default:
 		g.v -= 2500
 		if g.v < 0 {
@@ -84,7 +92,11 @@ func (g *GameState) Update() error {
 	}
 	if g.counter > 0 {
 		g.counter--
+		if g.topV < g.v {
+			g.topV = g.v
+		}
 		if g.counter == 0 && g.mode == GameStateModePlay {
+			g.lastX = g.x
 			g.mode = GameStateModeWait
 		}
 	}
@@ -93,8 +105,6 @@ func (g *GameState) Update() error {
 
 func (g *GameState) StartDemo() {
 	g.mode = GameStateModeDemo
-	g.x = 0
-	g.v = 1000
 }
 
 func (g *GameState) Reset() {
@@ -111,6 +121,16 @@ func (g *GameState) Start() {
 	}
 	g.mode = GameStateModePlay
 	g.counter = ebiten.MaxTPS() * 20
+	g.lastX = 0
+	g.topV = 0
+}
+
+func (g *GameState) IsPlaying() bool {
+	return g.mode == GameStateModePlay
+}
+
+func (g *GameState) Record() (int, int) {
+	return g.topV, g.lastX
 }
 
 func (g *GameState) Counter() int {

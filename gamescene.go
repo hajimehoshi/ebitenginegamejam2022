@@ -19,13 +19,16 @@ import (
 var bgKage []byte
 
 type GameScene struct {
-	bgShader   *ebiten.Shader
-	sequence   *Sequence
-	gameState  GameState
-	bgAlpha    float64
-	logoAlpha  float64
-	gaugeAlpha float64
-	countDown  int
+	bgShader     *ebiten.Shader
+	sequence     *Sequence
+	gameState    GameState
+	bgAlpha      float64
+	logoAlpha    float64
+	gaugeAlpha   float64
+	showRecord   bool
+	countDown    int
+	topVelocity  int
+	lastPosition int
 }
 
 func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
@@ -53,6 +56,9 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 			g.gaugeAlpha = float64(counter) / float64(maxCounter)
 			return nil
 		}, ebiten.MaxTPS()))
+	}
+	var addGameLoopTasks func()
+	addGameLoopTasks = func() {
 		g.sequence.AddTask(func() error {
 			if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) {
 				g.gameState.Reset()
@@ -82,7 +88,37 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 			g.gameState.Start()
 			return TaskEnded
 		})
+		g.sequence.AddTask(func() error {
+			if g.gameState.IsPlaying() {
+				return nil
+			}
+			g.showRecord = true
+			g.topVelocity, g.lastPosition = g.gameState.Record()
+			g.gameState.StartDemo()
+			return TaskEnded
+		})
+		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
+			// Cool time
+			return nil
+		}, ebiten.MaxTPS()))
+		g.sequence.AddTask(func() error {
+			if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) {
+				g.showRecord = false
+				return TaskEnded
+			}
+			return nil
+		})
+		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
+			g.logoAlpha = float64(counter) / float64(maxCounter)
+			return nil
+		}, ebiten.MaxTPS()/2))
+		g.sequence.AddTask(func() error {
+			addGameLoopTasks()
+			return TaskEnded
+		})
 	}
+
+	addGameLoopTasks()
 
 	g.sequence.Update()
 	g.gameState.Update()
@@ -159,10 +195,31 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 
 	// Render the time.
 	if c := g.gameState.Counter(); c > 0 {
-		str := fmt.Sprintf("%.2f", float64(c) / float64(ebiten.MaxTPS()))
+		str := fmt.Sprintf("%.2f", float64(c)/float64(ebiten.MaxTPS()))
 		x := 480.0
 		y := 96.0
 		renderNumberWithDecimalPoint(screen, str, x, y, 1)
+	}
+
+	// Render the record
+	if g.showRecord {
+		sw, _ := screen.Size()
+		v := g.topVelocity
+		p := g.lastPosition
+		lines := []string{
+			"Record",
+			"Top Speed",
+			fmt.Sprintf("%d.%03d km/h", v/1000, v%1000),
+			"Distance",
+			fmt.Sprintf("%d.%03d m", p/1000, p%1000),
+		}
+		for i, line := range lines {
+			f := spaceAgeSmall
+			r := text.BoundString(f, line)
+			x := (sw-r.Dx())/2 - r.Min.X
+			y := 144 + 96*i
+			text.Draw(screen, line, f, x, y, color.White)
+		}
 	}
 }
 
@@ -181,7 +238,7 @@ func renderNumberWithDecimalPoint(dst *ebiten.Image, str string, ox, oy float64,
 		default:
 			x += float64(digitWidth*i - digitWidth*len(str))
 		}
-		x += float64(digitWidth-glyph.Image.Bounds().Dx())/2
+		x += float64(digitWidth-glyph.Image.Bounds().Dx()) / 2
 		y := oy + glyph.Y
 		op.GeoM.Reset()
 		op.GeoM.Translate(x, y)
