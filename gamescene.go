@@ -28,6 +28,7 @@ const (
 	gameSceneStateTitleWait
 	gameSceneStateGameCountDown
 	gameSceneStateGamePlay
+	gameSceneStateGameResult
 )
 
 type GameScene struct {
@@ -93,6 +94,13 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 		if g.counter <= 0 {
 			g.state = gameSceneStateGamePlay
 			g.gameState.Start()
+			g.counterMax = ebiten.MaxTPS() * 30
+			g.counter = g.counterMax
+		}
+	case gameSceneStateGamePlay:
+		g.counter--
+		if g.counter <= 0 {
+			g.state = gameSceneStateGameResult
 		}
 	}
 	g.gameState.Update()
@@ -195,4 +203,6 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 			}
 		}
 	}
+
+	// Render the time.
 }
