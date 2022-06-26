@@ -27,11 +27,12 @@ func (p Pole) String() string {
 }
 
 type GameState struct {
-	pole     Pole
-	x        int // [mm]
-	v        int // [m/h]
-	vFixed   bool
+	pole      Pole
+	x         int // [mm]
+	v         int // [m/h]
+	vFixed    bool
 	resetting bool
+	counter   int
 }
 
 func max(a, b int) int {
@@ -58,12 +59,15 @@ func (g *GameState) Update() error {
 		}
 	}
 	if g.resetting {
-		g.x -= max(5, g.x / ebiten.MaxTPS())
+		g.x -= max(5, g.x/ebiten.MaxTPS())
 		if g.x < 0 {
 			g.x = 0
 		}
 	} else {
 		g.x += g.v * 1e3 / 3600 / ebiten.MaxTPS()
+	}
+	if g.counter > 0 {
+		g.counter--
 	}
 	return nil
 }
@@ -94,6 +98,11 @@ func (g *GameState) Start() {
 	}
 	g.vFixed = false
 	g.resetting = false
+	g.counter = ebiten.MaxTPS() * 30
+}
+
+func (g *GameState) Counter() int {
+	return g.counter
 }
 
 func (g *GameState) VelocityInMeterPerHour() int {

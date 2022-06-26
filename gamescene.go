@@ -151,28 +151,42 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 		p := g.gameState.PositionInMillimeter()
 		pstr := fmt.Sprintf("%d.%03d", p/1000, p%1000)
 		for j, line := range []string{vstr, pstr} {
-			op := &ebiten.DrawImageOptions{}
-			dotIndex := strings.Index(line, ".")
-			for i, glyph := range text.AppendGlyphs(nil, f, line) {
-				const digitWidth = 108
-				x := float64(baseX + (digitWidth-glyph.Image.Bounds().Dx())/2 - 72)
-				switch {
-				case i < dotIndex:
-					x += float64(digitWidth*i + digitWidth*3/4 - digitWidth*len(line))
-				case i == dotIndex:
-					x += float64(digitWidth*i + digitWidth*3/8 - digitWidth*len(line))
-				default:
-					x += float64(digitWidth*i - digitWidth*len(line))
-				}
-				y := float64(sh+72*j-72-offsetY) + glyph.Y
-				op.GeoM.Reset()
-				op.GeoM.Translate(x, y)
-				op.ColorM.Reset()
-				op.ColorM.Scale(1, 1, 1, alpha)
-				screen.DrawImage(glyph.Image, op)
-			}
+			x := float64(baseX - 72)
+			y := float64(sh + 72*j - 72 - offsetY)
+			renderNumberWithDecimalPoint(screen, line, x, y, alpha)
 		}
 	}
 
 	// Render the time.
+	if c := g.gameState.Counter(); c > 0 {
+		str := fmt.Sprintf("%.2f", float64(c) / float64(ebiten.MaxTPS()))
+		x := 480.0
+		y := 96.0
+		renderNumberWithDecimalPoint(screen, str, x, y, 1)
+	}
+}
+
+func renderNumberWithDecimalPoint(dst *ebiten.Image, str string, ox, oy float64, alpha float64) {
+	f := spaceAgeSmall
+	op := &ebiten.DrawImageOptions{}
+	dotIndex := strings.Index(str, ".")
+	for i, glyph := range text.AppendGlyphs(nil, f, str) {
+		const digitWidth = 108
+		x := ox
+		switch {
+		case i < dotIndex:
+			x += float64(digitWidth*i + digitWidth*3/4 - digitWidth*len(str))
+		case i == dotIndex:
+			x += float64(digitWidth*i + digitWidth*3/8 - digitWidth*len(str))
+		default:
+			x += float64(digitWidth*i - digitWidth*len(str))
+		}
+		x += float64(digitWidth-glyph.Image.Bounds().Dx())/2
+		y := oy + glyph.Y
+		op.GeoM.Reset()
+		op.GeoM.Translate(x, y)
+		op.ColorM.Reset()
+		op.ColorM.Scale(1, 1, 1, alpha)
+		dst.DrawImage(glyph.Image, op)
+	}
 }
