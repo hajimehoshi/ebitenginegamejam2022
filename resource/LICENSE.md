@@ -1,3 +1,14 @@
+# `bgm.ogg`
+
+ * https://opengameart.org/content/behind-the-universe
+
+CC-BY 3.0
+
+```
+Copyright/Attribution Notice:
+Alexandr Zhelanov https://soundcloud.com/alexandr-zhelanov
+```
+
 # `spaceage.otf`
 
  * https://www.ffonts.net/SpaceAge.font

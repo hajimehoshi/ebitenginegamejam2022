@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/audio"
+	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text"
 )
@@ -29,6 +31,9 @@ type GameScene struct {
 	countDown    int
 	topVelocity  int
 	lastPosition int
+
+	audioContext *audio.Context
+	audioPlayer  *audio.Player
 }
 
 func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
@@ -116,6 +121,30 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 			addGameLoopTasks()
 			return TaskEnded
 		})
+	}
+
+	if g.audioContext == nil {
+		g.audioContext = audio.NewContext(48000)
+
+		f, err := resourceFS.Open("bgm.ogg")
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		decoded, err := vorbis.DecodeWithSampleRate(48000, f)
+		if err != nil {
+			return err
+		}
+
+		loop := audio.NewInfiniteLoop(decoded, decoded.Length())
+		p, err := g.audioContext.NewPlayer(loop)
+		if err != nil {
+			return err
+		}
+		g.audioPlayer = p
+		g.audioPlayer.SetVolume(0.8)
+		g.audioPlayer.Play()
 	}
 
 	addGameLoopTasks()
