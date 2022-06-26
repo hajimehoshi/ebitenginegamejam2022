@@ -309,7 +309,26 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 			f := spaceAgeSmall
 			r := text.BoundString(f, line)
 			x := (sw-r.Dx())/2 - r.Min.X
-			y := sh - 144 - 72
+			y := sh - 144 - 96
+			text.Draw(screen, line, f, x, y, color.RGBA{0xa0, 0xa0, 0xa0, 0xff})
+		}
+	} else if g.gameState.ShouldShowGuide() {
+		sw, sh := screen.Size()
+		var str string
+		switch g.gameState.Pole() {
+		case PoleS:
+			str = "Press N Key"
+		case PoleN:
+			str = "Press S Key"
+		}
+		lines := []string{
+			str,
+		}
+		for _, line := range lines {
+			f := spaceAgeSmall
+			r := text.BoundString(f, line)
+			x := (sw-r.Dx())/2 - r.Min.X
+			y := sh - 144 - 96
 			text.Draw(screen, line, f, x, y, color.RGBA{0xa0, 0xa0, 0xa0, 0xff})
 		}
 	}

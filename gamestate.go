@@ -138,6 +138,14 @@ func (g *GameState) Counter() int {
 	return g.counter
 }
 
+func (g *GameState) Pole() Pole {
+	return g.pole
+}
+
+func (g *GameState) ShouldShowGuide() bool {
+	return g.mode == GameStateModePlay && g.v == 0
+}
+
 func (g *GameState) VelocityInMeterPerHour() int {
 	return g.v
 }
