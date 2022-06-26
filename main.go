@@ -8,7 +8,7 @@ import (
 )
 
 type SceneSwitcher interface {
-	SwitchToTitleScene()
+	SwitchToGameScene()
 }
 
 type Scene interface {
@@ -40,8 +40,8 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return 1920, 1080
 }
 
-func (g *Game) SwitchToTitleScene() {
-	g.nextScene = &TitleScene{}
+func (g *Game) SwitchToGameScene() {
+	g.nextScene = &GameScene{}
 }
 
 func main() {

@@ -67,7 +67,7 @@ func (s *SplashScene) Update(sceneSwitcher SceneSwitcher) error {
 			s.state = splashSceneStateQuit
 		}
 	case splashSceneStateQuit:
-		sceneSwitcher.SwitchToTitleScene()
+		sceneSwitcher.SwitchToGameScene()
 	}
 	return nil
 }
