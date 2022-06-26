@@ -335,6 +335,7 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 }
 
 func renderNumberWithDecimalPoint(dst *ebiten.Image, str string, ox, oy float64, alpha float64) {
+	// TODO: Define a new font.Face to overwrite the kerning.
 	f := spaceAgeSmall
 	op := &ebiten.DrawImageOptions{}
 	dotIndex := strings.Index(str, ".")
