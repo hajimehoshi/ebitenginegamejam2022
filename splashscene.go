@@ -11,21 +11,10 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-type splashSceneState int
-
-const (
-	splashSceneStateInit splashSceneState = iota
-	splashSceneStateFadeIn
-	splashSceneStateWait
-	splashSceneStateFadeOut
-	splashSceneStateQuit
-)
-
 type SplashScene struct {
-	state      splashSceneState
-	splashImg  *ebiten.Image
-	counter    int
-	counterMax int
+	splashImg   *ebiten.Image
+	sequence    *Sequence
+	splashAlpha float64
 }
 
 func (s *SplashScene) Update(sceneSwitcher SceneSwitcher) error {
@@ -42,51 +31,41 @@ func (s *SplashScene) Update(sceneSwitcher SceneSwitcher) error {
 		}
 		s.splashImg = ebiten.NewImageFromImage(img)
 	}
-	switch s.state {
-	case splashSceneStateInit:
-		s.state = splashSceneStateFadeIn
-		s.counterMax = ebiten.MaxTPS() / 2
-		s.counter = s.counterMax
-	case splashSceneStateFadeIn:
-		s.counter--
-		if s.counter <= 0 {
-			s.state = splashSceneStateWait
-			s.counterMax = ebiten.MaxTPS() * 2
-			s.counter = s.counterMax
-		}
-	case splashSceneStateWait:
-		s.counter--
-		if s.counter <= 0 || inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) {
-			s.state = splashSceneStateFadeOut
-			s.counterMax = ebiten.MaxTPS() / 2
-			s.counter = s.counterMax
-		}
-	case splashSceneStateFadeOut:
-		s.counter--
-		if s.counter <= 0 {
-			s.state = splashSceneStateQuit
-		}
-	case splashSceneStateQuit:
-		sceneSwitcher.SwitchToGameScene()
+	if s.sequence == nil {
+		s.sequence = &Sequence{}
+		s.sequence.AddTimerTask(func(counter, maxCounter int) error {
+			s.splashAlpha = float64(counter) / float64(maxCounter)
+			return nil
+		}, ebiten.MaxTPS()/2)
+		s.sequence.AddTimerTask(func(counter, maxCounter int) error {
+			s.splashAlpha = 1
+			if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) {
+				return TaskEnded
+			}
+			return nil
+		}, ebiten.MaxTPS()*2)
+		s.sequence.AddTimerTask(func(counter, maxCounter int) error {
+			s.splashAlpha = 1 - float64(counter)/float64(maxCounter)
+			return nil
+		}, ebiten.MaxTPS()/2)
+		s.sequence.AddTask(func() error {
+			s.splashAlpha = 0
+			sceneSwitcher.SwitchToGameScene()
+			return TaskEnded
+		})
+	}
+	if err := s.sequence.Update(); err != nil {
+		return err
 	}
 	return nil
 }
 
 func (s *SplashScene) Draw(screen *ebiten.Image) {
-	if s.state == splashSceneStateInit {
+	if s.sequence == nil {
 		return
 	}
 
-	var alpha float64
-	switch s.state {
-	case splashSceneStateFadeIn:
-		alpha = 1 - float64(s.counter)/float64(s.counterMax)
-	case splashSceneStateWait:
-		alpha = 1
-	case splashSceneStateFadeOut:
-		alpha = float64(s.counter) / float64(s.counterMax)
-	}
 	op := &ebiten.DrawImageOptions{}
-	op.ColorM.Scale(1, 1, 1, alpha)
+	op.ColorM.Scale(1, 1, 1, s.splashAlpha)
 	screen.DrawImage(s.splashImg, op)
 }
