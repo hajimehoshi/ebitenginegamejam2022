@@ -38,10 +38,10 @@ func NewTimerTask(f func(counter int, maxCounter int) error, counter int) Task {
 	var current int
 	max := counter
 	return func() error {
-		current++
 		if err := f(current, max); err != nil {
 			return err
 		}
+		current++
 		if current >= max {
 			return TaskEnded
 		}

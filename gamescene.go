@@ -44,11 +44,10 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 			g.logoAlpha = float64(counter) / float64(maxCounter)
 			return nil
 		}, ebiten.MaxTPS()/2))
-		g.sequence.AddTask(func () error {
-			g.gameState.StartFixedVelocity()
-			return TaskEnded
-		})
 		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
+			if counter == 0 {
+				g.gameState.StartFixedVelocity()
+			}
 			g.bgAlpha = float64(counter) / float64(maxCounter)
 			g.logoAlpha = 1
 			g.gaugeAlpha = float64(counter) / float64(maxCounter)
@@ -75,9 +74,11 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 		}, ebiten.MaxTPS()/2)))
 		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
 			g.countDown = int(math.Ceil(float64(maxCounter-counter) / float64(ebiten.MaxTPS())))
+			g.logoAlpha = 0
 			return nil
 		}, ebiten.MaxTPS()*3))
 		g.sequence.AddTask(func() error {
+			g.countDown = 0
 			g.gameState.Start()
 			return TaskEnded
 		})
