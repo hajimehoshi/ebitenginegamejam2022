@@ -26,7 +26,8 @@ func init() {
 }
 
 var (
-	spaceAge font.Face
+	spaceAgeBig   font.Face
+	spaceAgeSmall font.Face
 )
 
 func init() {
@@ -46,12 +47,24 @@ func init() {
 		panic(err)
 	}
 
-	face, err := opentype.NewFace(font, &opentype.FaceOptions{
-		Size: 144,
-		DPI:  72,
-	})
-	if err != nil {
-		panic(err)
+	{
+		face, err := opentype.NewFace(font, &opentype.FaceOptions{
+			Size: 144,
+			DPI:  72,
+		})
+		if err != nil {
+			panic(err)
+		}
+		spaceAgeBig = face
 	}
-	spaceAge = face
+	{
+		face, err := opentype.NewFace(font, &opentype.FaceOptions{
+			Size: 72,
+			DPI:  72,
+		})
+		if err != nil {
+			panic(err)
+		}
+		spaceAgeSmall = face
+	}
 }

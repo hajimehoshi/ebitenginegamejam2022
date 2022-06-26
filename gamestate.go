@@ -29,13 +29,13 @@ func (p Pole) String() string {
 	}
 }
 
-type GameScene struct {
+type GameState struct {
 	pole Pole
 	x    int // [mm]
 	v    int // [m/h]
 }
 
-func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
+func (g *GameState) Update(sceneSwitcher SceneSwitcher) error {
 	switch {
 	case g.pole == PoleN && inpututil.IsKeyJustPressed(ebiten.KeyS):
 		g.pole = PoleS
@@ -53,7 +53,7 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 	return nil
 }
 
-func (g *GameScene) Draw(screen *ebiten.Image) {
+func (g *GameState) Draw(screen *ebiten.Image) {
 	msg := fmt.Sprintf("Press S and N alternately!\nCurrent Pole: %s\nVelocity: %d.%03d [km/h]\nPosition: %d.%03d [m]", g.pole, g.v/1000, g.v%1000, g.x/1000, g.x%1000)
 	ebitenutil.DebugPrint(screen, msg)
 }

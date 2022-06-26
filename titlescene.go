@@ -68,7 +68,6 @@ func (t *TitleScene) Update(sceneSwitcher SceneSwitcher) error {
 		}
 	case titleSceneStateWait:
 		if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) {
-			sceneSwitcher.SwitchToGameScene()
 			return nil
 		}
 	}
@@ -105,7 +104,7 @@ func (t *TitleScene) Draw(screen *ebiten.Image) {
 	}
 	clr := color.RGBA{byte(0xff * alpha), byte(0xff * alpha), byte(0xff * alpha), byte(0xff * alpha)}
 	for i, line := range []string{"Manual", "Linear", "Motor", "Car"} {
-		f := spaceAge
+		f := spaceAgeBig
 		r := text.BoundString(f, line)
 		x := (sw-r.Dx())/2 - r.Min.X
 		y := 144 + 144*i
