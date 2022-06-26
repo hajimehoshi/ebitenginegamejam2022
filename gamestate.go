@@ -26,13 +26,21 @@ func (p Pole) String() string {
 	}
 }
 
+type GameStateMode int
+
+const (
+	GameStateModeWait GameStateMode = iota
+	GameStateModeDemo
+	GameStateModeResetting
+	GameStateModePlay
+)
+
 type GameState struct {
-	pole      Pole
-	x         int // [mm]
-	v         int // [m/h]
-	vFixed    bool
-	resetting bool
-	counter   int
+	pole    Pole
+	x       int // [mm]
+	v       int // [m/h]
+	mode    GameStateMode
+	counter int
 }
 
 func max(a, b int) int {
@@ -43,7 +51,8 @@ func max(a, b int) int {
 }
 
 func (g *GameState) Update() error {
-	if !g.vFixed && !g.resetting {
+	switch g.mode {
+	case GameStateModePlay:
 		switch {
 		case g.pole == PoleN && inpututil.IsKeyJustPressed(ebiten.KeyS):
 			g.pole = PoleS
@@ -57,48 +66,51 @@ func (g *GameState) Update() error {
 		if g.v < 0 {
 			g.v = 0
 		}
-	}
-	if g.resetting {
+	case GameStateModeResetting:
+		g.v = 0
 		g.x -= max(5, g.x/ebiten.MaxTPS())
 		if g.x < 0 {
 			g.x = 0
 		}
-	} else {
+	case GameStateModeDemo:
+	default:
+		g.v -= 2500
+		if g.v < 0 {
+			g.v = 0
+		}
+	}
+	if g.mode != GameStateModeResetting {
 		g.x += g.v * 1e3 / 3600 / ebiten.MaxTPS()
 	}
 	if g.counter > 0 {
 		g.counter--
+		if g.counter == 0 && g.mode == GameStateModePlay {
+			g.mode = GameStateModeWait
+		}
 	}
 	return nil
 }
 
-func (g *GameState) StartFixedVelocity() {
+func (g *GameState) StartDemo() {
+	g.mode = GameStateModeDemo
 	g.x = 0
 	g.v = 1000
-	g.vFixed = true
-	g.resetting = false
 }
 
 func (g *GameState) Reset() {
-	g.vFixed = true
-	g.resetting = true
-}
-
-func (g *GameState) IsResetting() bool {
-	return g.resetting
+	g.mode = GameStateModeResetting
 }
 
 func (g *GameState) CanStart() bool {
-	return g.resetting == true && g.x == 0
+	return g.mode == GameStateModeResetting && g.x == 0
 }
 
 func (g *GameState) Start() {
 	if !g.CanStart() {
 		return
 	}
-	g.vFixed = false
-	g.resetting = false
-	g.counter = ebiten.MaxTPS() * 30
+	g.mode = GameStateModePlay
+	g.counter = ebiten.MaxTPS() * 20
 }
 
 func (g *GameState) Counter() int {

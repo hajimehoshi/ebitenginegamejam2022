@@ -46,7 +46,7 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 		}, ebiten.MaxTPS()/2))
 		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
 			if counter == 0 {
-				g.gameState.StartFixedVelocity()
+				g.gameState.StartDemo()
 			}
 			g.bgAlpha = float64(counter) / float64(maxCounter)
 			g.logoAlpha = 1
