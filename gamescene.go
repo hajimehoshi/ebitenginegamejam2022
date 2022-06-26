@@ -22,16 +22,17 @@ import (
 var bgKage []byte
 
 type GameScene struct {
-	bgShader     *ebiten.Shader
-	sequence     *Sequence
-	gameState    GameState
-	bgAlpha      float64
-	logoAlpha    float64
-	gaugeAlpha   float64
-	showRecord   bool
-	countDown    int
-	topVelocity  int
-	lastPosition int
+	bgShader       *ebiten.Shader
+	sequence       *Sequence
+	gameState      GameState
+	bgAlpha        float64
+	logoAlpha      float64
+	showPressSpace bool
+	gaugeAlpha     float64
+	showRecord     bool
+	countDown      int
+	topVelocity    int
+	lastPosition   int
 
 	audioContext  *audio.Context
 	bgmPlayer     *audio.Player
@@ -68,7 +69,9 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 	var addGameLoopTasks func()
 	addGameLoopTasks = func() {
 		g.sequence.AddTask(func() error {
-			if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) {
+			g.showPressSpace = true
+			if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+				g.showPressSpace = false
 				g.gameState.Reset()
 				return TaskEnded
 			}
@@ -118,7 +121,8 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 			return nil
 		}, ebiten.MaxTPS()))
 		g.sequence.AddTask(func() error {
-			if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) {
+			g.showPressSpace = true
+			if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 				g.showRecord = false
 				return TaskEnded
 			}
@@ -293,6 +297,20 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 			x := (sw-r.Dx())/2 - r.Min.X
 			y := 144 + 96*i
 			text.Draw(screen, line, f, x, y, color.White)
+		}
+	}
+
+	if g.showPressSpace {
+		sw, sh := screen.Size()
+		lines := []string{
+			"Press Space Key",
+		}
+		for _, line := range lines {
+			f := spaceAgeSmall
+			r := text.BoundString(f, line)
+			x := (sw-r.Dx())/2 - r.Min.X
+			y := sh - 144 - 72
+			text.Draw(screen, line, f, x, y, color.RGBA{0xa0, 0xa0, 0xa0, 0xff})
 		}
 	}
 }

@@ -39,7 +39,7 @@ func (s *SplashScene) Update(sceneSwitcher SceneSwitcher) error {
 		}, ebiten.MaxTPS()/2))
 		s.sequence.AddTask(NewTimerTask(func(counter, maxCounter int) error {
 			s.splashAlpha = 1
-			if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) {
+			if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) || inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 				return TaskEnded
 			}
 			return nil
