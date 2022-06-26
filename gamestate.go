@@ -76,7 +76,7 @@ func (g *GameState) StartFixedVelocity() {
 }
 
 func (g *GameState) Reset() {
-	g.vFixed = false
+	g.vFixed = true
 	g.resetting = true
 }
 

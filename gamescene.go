@@ -141,9 +141,9 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 		r := text.BoundString(f, "km/h")
 		offsetY := 32
 		baseX := sw - (r.Dx() + r.Min.X)
-		for i, line := range []string{"km", "km/h"} {
+		for i, line := range []string{"km/h", "m"} {
 			x := baseX - 48
-			y := sh - 72*i - offsetY
+			y := sh + 72*i - 72 - offsetY
 			text.Draw(screen, line, f, x, y, color.White)
 		}
 
@@ -151,7 +151,7 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 		vstr := fmt.Sprintf("%d.%03d", v/1000, v%1000)
 		p := g.gameState.PositionInMillimeter()
 		pstr := fmt.Sprintf("%d.%03d", p/1000, p%1000)
-		for j, line := range []string{pstr, vstr} {
+		for j, line := range []string{vstr, pstr} {
 			op := &ebiten.DrawImageOptions{}
 			dotIndex := strings.Index(line, ".")
 			for i, glyph := range text.AppendGlyphs(nil, f, line) {
@@ -166,7 +166,7 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 				default:
 					x += float64(digitWidth*i - digitWidth*len(line))
 				}
-				y := float64(sh-72*j-offsetY) + glyph.Y
+				y := float64(sh+72*j-72-offsetY) + glyph.Y
 				op.GeoM.Translate(x, y)
 				screen.DrawImage(glyph.Image, op)
 			}
