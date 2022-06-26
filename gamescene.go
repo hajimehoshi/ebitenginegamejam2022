@@ -13,6 +13,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
+	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text"
 )
@@ -32,8 +33,10 @@ type GameScene struct {
 	topVelocity  int
 	lastPosition int
 
-	audioContext *audio.Context
-	audioPlayer  *audio.Player
+	audioContext  *audio.Context
+	bgmPlayer     *audio.Player
+	seStartPlayer *audio.Player
+	seEndPlayer   *audio.Player
 }
 
 func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
@@ -91,6 +94,10 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 		g.sequence.AddTask(func() error {
 			g.countDown = 0
 			g.gameState.Start()
+			if err := g.seStartPlayer.Rewind(); err != nil {
+				return err
+			}
+			g.seStartPlayer.Play()
 			return TaskEnded
 		})
 		g.sequence.AddTask(func() error {
@@ -100,6 +107,10 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 			g.showRecord = true
 			g.topVelocity, g.lastPosition = g.gameState.Record()
 			g.gameState.StartDemo()
+			if err := g.seEndPlayer.Rewind(); err != nil {
+				return err
+			}
+			g.seEndPlayer.Play()
 			return TaskEnded
 		})
 		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
@@ -124,27 +135,61 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 	}
 
 	if g.audioContext == nil {
-		g.audioContext = audio.NewContext(48000)
+		const sampleRate = 48000
+		g.audioContext = audio.NewContext(sampleRate)
+		{
+			f, err := resourceFS.Open("bgm.ogg")
+			if err != nil {
+				return err
+			}
+			defer f.Close()
 
-		f, err := resourceFS.Open("bgm.ogg")
-		if err != nil {
-			return err
-		}
-		defer f.Close()
+			decoded, err := vorbis.DecodeWithSampleRate(sampleRate, f)
+			if err != nil {
+				return err
+			}
 
-		decoded, err := vorbis.DecodeWithSampleRate(48000, f)
-		if err != nil {
-			return err
+			loop := audio.NewInfiniteLoop(decoded, decoded.Length())
+			p, err := g.audioContext.NewPlayer(loop)
+			if err != nil {
+				return err
+			}
+			g.bgmPlayer = p
+			g.bgmPlayer.SetVolume(0.8)
+			g.bgmPlayer.Play()
 		}
+		{
+			f, err := resourceFS.Open("start.wav")
+			if err != nil {
+				return err
+			}
+			defer f.Close()
 
-		loop := audio.NewInfiniteLoop(decoded, decoded.Length())
-		p, err := g.audioContext.NewPlayer(loop)
-		if err != nil {
-			return err
+			decoded, err := wav.DecodeWithSampleRate(sampleRate, f)
+			if err != nil {
+				return err
+			}
+
+			p, err := g.audioContext.NewPlayer(decoded)
+			g.seStartPlayer = p
+			g.seStartPlayer.SetVolume(0.8)
 		}
-		g.audioPlayer = p
-		g.audioPlayer.SetVolume(0.8)
-		g.audioPlayer.Play()
+		{
+			f, err := resourceFS.Open("end.wav")
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			decoded, err := wav.DecodeWithSampleRate(sampleRate, f)
+			if err != nil {
+				return err
+			}
+
+			p, err := g.audioContext.NewPlayer(decoded)
+			g.seEndPlayer = p
+			g.seEndPlayer.SetVolume(0.8)
+		}
 	}
 
 	addGameLoopTasks()

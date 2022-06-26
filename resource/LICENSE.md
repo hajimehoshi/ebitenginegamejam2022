@@ -65,3 +65,11 @@ Email: mouse@mickeyavenue.com
  * https://github.com/hajimehoshi/ebiten
 
 The Ebitengine logo by Hajime Hoshi is licensed under the Creative Commons Attribution-NoDerivatives 4.0.
+
+# `start.wav` / `end.wav`
+
+ * https://opengameart.org/content/space-ship-shield-sounds
+ * `start.wav`: `space shield sounds - 7.wav`
+ * `end.wav`: `space shield sounds - 8.wav`
+
+CC0
