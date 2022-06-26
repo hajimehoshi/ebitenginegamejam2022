@@ -88,6 +88,14 @@ func (g *GameState) CanStart() bool {
 	return g.resetting == true && g.x == 0
 }
 
+func (g *GameState) Start() {
+	if !g.CanStart() {
+		return
+	}
+	g.vFixed = false
+	g.resetting = false
+}
+
 func (g *GameState) VelocityInMeterPerHour() int {
 	return g.v
 }

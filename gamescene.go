@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"fmt"
 	"image/color"
+	"math"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -26,6 +27,7 @@ const (
 	gameSceneStateBgFadeIn
 	gameSceneStateTitleWait
 	gameSceneStateGameCountDown
+	gameSceneStateGamePlay
 )
 
 type GameScene struct {
@@ -83,6 +85,14 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 		}
 		if g.gameState.CanStart() && g.counter <= 0 {
 			g.state = gameSceneStateGameCountDown
+			g.counterMax = ebiten.MaxTPS() * 3
+			g.counter = g.counterMax
+		}
+	case gameSceneStateGameCountDown:
+		g.counter--
+		if g.counter <= 0 {
+			g.state = gameSceneStateGamePlay
+			g.gameState.Start()
 		}
 	}
 	g.gameState.Update()
@@ -94,8 +104,9 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 		return
 	}
 
+	// Render the background.
 	switch g.state {
-	case gameSceneStateBgFadeIn, gameSceneStateTitleWait, gameSceneStateGameCountDown:
+	case gameSceneStateBgFadeIn, gameSceneStateTitleWait, gameSceneStateGameCountDown, gameSceneStateGamePlay:
 		sw, sh := screen.Size()
 		alpha := float32(1)
 		switch g.state {
@@ -111,6 +122,7 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 		})
 	}
 
+	// Render the title.
 	switch g.state {
 	case gameSceneStateLogoFadeIn, gameSceneStateLogoWait, gameSceneStateBgFadeIn, gameSceneStateTitleWait:
 		sw, _ := screen.Size()
@@ -131,11 +143,20 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 			y := 144 + 144*i
 			text.Draw(screen, line, f, x, y, clr)
 		}
+	case gameSceneStateGameCountDown:
+		sw, _ := screen.Size()
+		n := int(math.Ceil(float64(g.counter) / float64(ebiten.MaxTPS())))
+		line := fmt.Sprintf("%d", n)
+		f := spaceAgeBig
+		r := text.BoundString(f, line)
+		x := (sw-r.Dx())/2 - r.Min.X
+		y := 144
+		text.Draw(screen, line, f, x, y, color.White)
 	}
 
 	// Render the position and the velocity.
 	switch g.state {
-	case gameSceneStateTitleWait, gameSceneStateGameCountDown:
+	case gameSceneStateTitleWait, gameSceneStateGameCountDown, gameSceneStateGamePlay:
 		sw, sh := screen.Size()
 		f := spaceAgeSmall
 		r := text.BoundString(f, "km/h")
