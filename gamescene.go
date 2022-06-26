@@ -18,25 +18,14 @@ import (
 //go:embed bg.kage
 var bgKage []byte
 
-type gameSceneState int
-
-const (
-	gameSceneStateInit gameSceneState = iota
-	gameSceneStateLogoFadeIn
-	gameSceneStateLogoWait
-	gameSceneStateBgFadeIn
-	gameSceneStateTitleWait
-	gameSceneStateGameCountDown
-	gameSceneStateGamePlay
-	gameSceneStateGameResult
-)
-
 type GameScene struct {
-	state      gameSceneState
 	bgShader   *ebiten.Shader
-	counter    int
-	counterMax int
+	sequence   *Sequence
 	gameState  GameState
+	bgAlpha    float64
+	logoAlpha  float64
+	gaugeAlpha float64
+	countDown  int
 }
 
 func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
@@ -48,103 +37,80 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 		g.bgShader = s
 	}
 
-	switch g.state {
-	case gameSceneStateInit:
-		g.state = gameSceneStateLogoFadeIn
-		g.counterMax = ebiten.MaxTPS() / 2
-		g.counter = g.counterMax
-	case gameSceneStateLogoFadeIn:
-		g.counter--
-		if g.counter <= 0 {
-			g.state = gameSceneStateLogoWait
-			g.counterMax = ebiten.MaxTPS() / 2
-			g.counter = g.counterMax
-		}
-	case gameSceneStateLogoWait:
-		g.counter--
-		if g.counter <= 0 {
-			g.state = gameSceneStateBgFadeIn
-			g.counterMax = ebiten.MaxTPS()
-			g.counter = g.counterMax
+	if g.sequence == nil {
+		g.sequence = &Sequence{}
+		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
+			g.bgAlpha = 0
+			g.logoAlpha = float64(counter) / float64(maxCounter)
+			return nil
+		}, ebiten.MaxTPS()/2))
+		g.sequence.AddTask(func () error {
 			g.gameState.StartFixedVelocity()
-		}
-	case gameSceneStateBgFadeIn:
-		g.counter--
-		if g.counter <= 0 {
-			g.state = gameSceneStateTitleWait
-		}
-	case gameSceneStateTitleWait:
-		if g.counter > 0 {
-			g.counter--
-		}
-		if !g.gameState.IsResetting() {
+			return TaskEnded
+		})
+		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
+			g.bgAlpha = float64(counter) / float64(maxCounter)
+			g.logoAlpha = 1
+			g.gaugeAlpha = float64(counter) / float64(maxCounter)
+			return nil
+		}, ebiten.MaxTPS()))
+		g.sequence.AddTask(func() error {
 			if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) {
 				g.gameState.Reset()
-				g.counterMax = ebiten.MaxTPS() / 2
-				g.counter = g.counterMax
+				return TaskEnded
 			}
-		}
-		if g.gameState.CanStart() && g.counter <= 0 {
-			g.state = gameSceneStateGameCountDown
-			g.counterMax = ebiten.MaxTPS() * 3
-			g.counter = g.counterMax
-		}
-	case gameSceneStateGameCountDown:
-		g.counter--
-		if g.counter <= 0 {
-			g.state = gameSceneStateGamePlay
+			return nil
+		})
+		g.sequence.AddTask(NewAllTask(func() error {
+			// Wait the game state is ready to start.
+			if !g.gameState.CanStart() {
+				return nil
+			}
+			return TaskEnded
+		}, NewTimerTask(func(counter int, maxCounter int) error {
+			// Fade out the logo.
+			g.bgAlpha = 1
+			g.logoAlpha = 1 - float64(counter)/float64(maxCounter)
+			return nil
+		}, ebiten.MaxTPS()/2)))
+		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
+			g.countDown = int(math.Ceil(float64(maxCounter-counter) / float64(ebiten.MaxTPS())))
+			return nil
+		}, ebiten.MaxTPS()*3))
+		g.sequence.AddTask(func() error {
 			g.gameState.Start()
-			g.counterMax = ebiten.MaxTPS() * 30
-			g.counter = g.counterMax
-		}
-	case gameSceneStateGamePlay:
-		g.counter--
-		if g.counter <= 0 {
-			g.state = gameSceneStateGameResult
-		}
+			return TaskEnded
+		})
 	}
+
+	g.sequence.Update()
 	g.gameState.Update()
 	return nil
 }
 
 func (g *GameScene) Draw(screen *ebiten.Image) {
-	if g.state == gameSceneStateInit {
+	if g.sequence == nil {
 		return
 	}
 
 	// Render the background.
-	switch g.state {
-	case gameSceneStateBgFadeIn, gameSceneStateTitleWait, gameSceneStateGameCountDown, gameSceneStateGamePlay:
+	if g.bgAlpha > 0 {
 		sw, sh := screen.Size()
-		alpha := float32(1)
-		switch g.state {
-		case gameSceneStateBgFadeIn:
-			alpha = 1 - float32(g.counter)/float32(g.counterMax)
-		}
 		t := float32(g.gameState.PositionInMillimeter()) / 1000.0
 		v := float32(g.gameState.VelocityInMeterPerHour()) / 1000.0
 		screen.DrawRectShader(sw, sh, g.bgShader, &ebiten.DrawRectShaderOptions{
 			Uniforms: map[string]any{
 				"Pos":      t,
 				"Velocity": v,
-				"Alpha":    alpha,
+				"Alpha":    float32(g.bgAlpha),
 			},
 		})
 	}
 
 	// Render the title.
-	switch g.state {
-	case gameSceneStateLogoFadeIn, gameSceneStateLogoWait, gameSceneStateBgFadeIn, gameSceneStateTitleWait:
+	if g.logoAlpha > 0 {
 		sw, _ := screen.Size()
-		alpha := 1.0
-		switch g.state {
-		case gameSceneStateLogoFadeIn:
-			alpha = 1 - float64(g.counter)/float64(g.counterMax)
-		case gameSceneStateTitleWait:
-			if g.gameState.IsResetting() {
-				alpha = float64(g.counter) / float64(g.counterMax)
-			}
-		}
+		alpha := g.logoAlpha
 		clr := color.RGBA{byte(0xff * alpha), byte(0xff * alpha), byte(0xff * alpha), byte(0xff * alpha)}
 		for i, line := range []string{"Manual", "Linear", "Motor", "Car"} {
 			f := spaceAgeBig
@@ -153,10 +119,10 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 			y := 144 + 144*i
 			text.Draw(screen, line, f, x, y, clr)
 		}
-	case gameSceneStateGameCountDown:
+	}
+	if g.countDown > 0 {
 		sw, _ := screen.Size()
-		n := int(math.Ceil(float64(g.counter) / float64(ebiten.MaxTPS())))
-		line := fmt.Sprintf("%d", n)
+		line := fmt.Sprintf("%d", g.countDown)
 		f := spaceAgeBig
 		r := text.BoundString(f, line)
 		x := (sw-r.Dx())/2 - r.Min.X
@@ -165,17 +131,18 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 	}
 
 	// Render the position and the velocity.
-	switch g.state {
-	case gameSceneStateTitleWait, gameSceneStateGameCountDown, gameSceneStateGamePlay:
+	if g.gaugeAlpha > 0 {
 		sw, sh := screen.Size()
 		f := spaceAgeSmall
 		r := text.BoundString(f, "km/h")
 		offsetY := 32
 		baseX := sw - (r.Dx() + r.Min.X)
+		alpha := g.gaugeAlpha
+		clr := color.RGBA{byte(0xff * alpha), byte(0xff * alpha), byte(0xff * alpha), byte(0xff * alpha)}
 		for i, line := range []string{"km/h", "m"} {
 			x := baseX - 48
 			y := sh + 72*i - 72 - offsetY
-			text.Draw(screen, line, f, x, y, color.White)
+			text.Draw(screen, line, f, x, y, clr)
 		}
 
 		v := g.gameState.VelocityInMeterPerHour()
@@ -186,7 +153,6 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 			op := &ebiten.DrawImageOptions{}
 			dotIndex := strings.Index(line, ".")
 			for i, glyph := range text.AppendGlyphs(nil, f, line) {
-				op.GeoM.Reset()
 				const digitWidth = 108
 				x := float64(baseX + (digitWidth-glyph.Image.Bounds().Dx())/2 - 72)
 				switch {
@@ -198,7 +164,10 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 					x += float64(digitWidth*i - digitWidth*len(line))
 				}
 				y := float64(sh+72*j-72-offsetY) + glyph.Y
+				op.GeoM.Reset()
 				op.GeoM.Translate(x, y)
+				op.ColorM.Reset()
+				op.ColorM.Scale(1, 1, 1, alpha)
 				screen.DrawImage(glyph.Image, op)
 			}
 		}

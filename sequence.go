@@ -9,8 +9,10 @@ import (
 
 var TaskEnded = errors.New("task ended")
 
+type Task func() error
+
 type Sequence struct {
-	tasks []func() error
+	tasks []Task
 }
 
 func (s *Sequence) Update() error {
@@ -28,14 +30,14 @@ func (s *Sequence) Update() error {
 	return nil
 }
 
-func (s *Sequence) AddTask(f func() error) {
+func (s *Sequence) AddTask(f Task) {
 	s.tasks = append(s.tasks, f)
 }
 
-func (s *Sequence) AddTimerTask(f func(counter int, maxCounter int) error, counter int) {
+func NewTimerTask(f func(counter int, maxCounter int) error, counter int) Task {
 	var current int
 	max := counter
-	s.AddTask(func() error {
+	return func() error {
 		current++
 		if err := f(current, max); err != nil {
 			return err
@@ -44,5 +46,28 @@ func (s *Sequence) AddTimerTask(f func(counter int, maxCounter int) error, count
 			return TaskEnded
 		}
 		return nil
-	})
+	}
+}
+
+func NewAllTask(tasks ...Task) Task {
+	return func() error {
+		var execed bool
+		for i, t := range tasks {
+			if t == nil {
+				continue
+			}
+			execed = true
+			if err := t(); err != nil {
+				if err == TaskEnded {
+					tasks[i] = nil
+					continue
+				}
+				return err
+			}
+		}
+		if execed {
+			return nil
+		}
+		return TaskEnded
+	}
 }
