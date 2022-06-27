@@ -23,7 +23,7 @@ func Fragment(position vec4, texCoord vec2, color vec4) vec4 {
 	pos.y *= aspect
 	// Determine the color.
 	l := length(pos)
-	s := sin(1/l + fract(Pos)*2*Pi)
+	s := sin(1/l + Pos*2*Pi)
 	c := vec4((s/2+0.4)*min(1, l*4), 0, (-s/2+0.4)*min(1, l*4), 1)
 	c *= Alpha
 	v := clamp(log(Velocity)/40, 0, 1)

@@ -211,11 +211,11 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 	// Render the background.
 	if g.bgAlpha > 0 {
 		sw, sh := screen.Size()
-		t := float32(g.gameState.PositionInMillimeter()) / 1000.0
+		t := float32(g.gameState.PositionInMillimeter() % 1000) / 1000.0
 		v := float32(g.gameState.VelocityInMeterPerHour()) / 1000.0
 		screen.DrawRectShader(sw, sh, g.bgShader, &ebiten.DrawRectShaderOptions{
 			Uniforms: map[string]any{
-				"Pos":      t,
+				"Pos":      t, // [0, 1]
 				"Velocity": v,
 				"Alpha":    float32(g.bgAlpha),
 			},
