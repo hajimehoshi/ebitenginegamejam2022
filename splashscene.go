@@ -33,18 +33,18 @@ func (s *SplashScene) Update(sceneSwitcher SceneSwitcher) error {
 	}
 	if s.sequence == nil {
 		s.sequence = &Sequence{}
-		s.sequence.AddTask(NewTimerTask(func(counter, maxCounter int) error {
+		s.sequence.AddTask(NewCountingTask(func(counter, maxCounter int) error {
 			s.splashAlpha = float64(counter) / float64(maxCounter)
 			return nil
 		}, ebiten.MaxTPS()/2))
-		s.sequence.AddTask(NewTimerTask(func(counter, maxCounter int) error {
+		s.sequence.AddTask(NewCountingTask(func(counter, maxCounter int) error {
 			s.splashAlpha = 1
 			if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyN) || inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 				return TaskEnded
 			}
 			return nil
 		}, ebiten.MaxTPS()*2))
-		s.sequence.AddTask(NewTimerTask(func(counter, maxCounter int) error {
+		s.sequence.AddTask(NewCountingTask(func(counter, maxCounter int) error {
 			s.splashAlpha = 1 - float64(counter)/float64(maxCounter)
 			return nil
 		}, ebiten.MaxTPS()/2))

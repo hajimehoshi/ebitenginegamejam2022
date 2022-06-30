@@ -41,7 +41,7 @@ func (s *Sequence) AddTask(f Task) {
 	s.tasks = append(s.tasks, f)
 }
 
-func NewTimerTask(f func(counter int, maxCounter int) error, counter int) Task {
+func NewCountingTask(f func(counter int, maxCounter int) error, counter int) Task {
 	var current int
 	max := counter
 	return func() error {

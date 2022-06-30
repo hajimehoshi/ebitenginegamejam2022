@@ -51,12 +51,12 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 
 	if g.sequence == nil {
 		g.sequence = &Sequence{}
-		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
+		g.sequence.AddTask(NewCountingTask(func(counter int, maxCounter int) error {
 			g.bgAlpha = 0
 			g.logoAlpha = float64(counter) / float64(maxCounter)
 			return nil
 		}, ebiten.MaxTPS()/2))
-		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
+		g.sequence.AddTask(NewCountingTask(func(counter int, maxCounter int) error {
 			if counter == 0 {
 				g.gameState.StartDemo()
 			}
@@ -83,13 +83,13 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 				return nil
 			}
 			return TaskEnded
-		}, NewTimerTask(func(counter int, maxCounter int) error {
+		}, NewCountingTask(func(counter int, maxCounter int) error {
 			// Fade out the logo.
 			g.bgAlpha = 1
 			g.logoAlpha = 1 - float64(counter)/float64(maxCounter)
 			return nil
 		}, ebiten.MaxTPS()/2)))
-		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
+		g.sequence.AddTask(NewCountingTask(func(counter int, maxCounter int) error {
 			g.countDown = int(math.Ceil(float64(maxCounter-counter) / float64(ebiten.MaxTPS())))
 			g.logoAlpha = 0
 			return nil
@@ -116,7 +116,7 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 			g.seEndPlayer.Play()
 			return TaskEnded
 		})
-		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
+		g.sequence.AddTask(NewCountingTask(func(counter int, maxCounter int) error {
 			// Cool time
 			return nil
 		}, ebiten.MaxTPS()))
@@ -128,7 +128,7 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 			}
 			return nil
 		})
-		g.sequence.AddTask(NewTimerTask(func(counter int, maxCounter int) error {
+		g.sequence.AddTask(NewCountingTask(func(counter int, maxCounter int) error {
 			g.logoAlpha = float64(counter) / float64(maxCounter)
 			return nil
 		}, ebiten.MaxTPS()/2))
