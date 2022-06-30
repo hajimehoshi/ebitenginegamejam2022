@@ -7,7 +7,10 @@ import (
 	"errors"
 )
 
-var TaskEnded = errors.New("task ended")
+var (
+	TaskEnded            = errors.New("task ended")
+	TaskEndedAndContinue = errors.New("task ended and continue")
+)
 
 type Task func() error
 
@@ -16,13 +19,17 @@ type Sequence struct {
 }
 
 func (s *Sequence) Update() error {
+retry:
 	if len(s.tasks) == 0 {
 		return nil
 	}
 	if err := s.tasks[0](); err != nil {
-		if err == TaskEnded {
+		if err == TaskEnded || err == TaskEndedAndContinue {
 			s.tasks[0] = nil
 			s.tasks = s.tasks[1:]
+			if err == TaskEndedAndContinue {
+				goto retry
+			}
 			return nil
 		}
 		return err
@@ -50,6 +57,7 @@ func NewTimerTask(f func(counter int, maxCounter int) error, counter int) Task {
 }
 
 func NewAllTask(tasks ...Task) Task {
+	cont := true
 	return func() error {
 		var execed bool
 		for i, t := range tasks {
@@ -58,8 +66,11 @@ func NewAllTask(tasks ...Task) Task {
 			}
 			execed = true
 			if err := t(); err != nil {
-				if err == TaskEnded {
+				if err == TaskEnded || err == TaskEndedAndContinue {
 					tasks[i] = nil
+					if err == TaskEnded {
+						cont = false
+					}
 					continue
 				}
 				return err
@@ -67,6 +78,9 @@ func NewAllTask(tasks ...Task) Task {
 		}
 		if execed {
 			return nil
+		}
+		if cont {
+			return TaskEndedAndContinue
 		}
 		return TaskEnded
 	}

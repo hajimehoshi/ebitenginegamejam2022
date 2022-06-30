@@ -51,7 +51,7 @@ func (s *SplashScene) Update(sceneSwitcher SceneSwitcher) error {
 		s.sequence.AddTask(func() error {
 			s.splashAlpha = 0
 			sceneSwitcher.SwitchToGameScene()
-			return TaskEnded
+			return TaskEndedAndContinue
 		})
 	}
 	if err := s.sequence.Update(); err != nil {

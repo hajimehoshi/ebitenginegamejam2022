@@ -134,7 +134,8 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 		}, ebiten.MaxTPS()/2))
 		g.sequence.AddTask(func() error {
 			addGameLoopTasks()
-			return TaskEnded
+			// Execute the queued task immediately.
+			return TaskEndedAndContinue
 		})
 	}
 
