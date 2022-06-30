@@ -56,7 +56,7 @@ func NewCountingTask(f func(counter int, maxCounter int) error, counter int) Tas
 	}
 }
 
-func NewAllTask(tasks ...Task) Task {
+func NewParallelTask(tasks ...Task) Task {
 	cont := true
 	return func() error {
 		var execed bool

@@ -77,7 +77,7 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 			}
 			return nil
 		})
-		g.sequence.AddTask(NewAllTask(func() error {
+		g.sequence.AddTask(NewParallelTask(func() error {
 			// Wait the game state is ready to start.
 			if !g.gameState.CanStart() {
 				return nil
