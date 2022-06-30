@@ -78,7 +78,7 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 			return nil
 		})
 		g.sequence.AddTask(NewParallelTask(func() error {
-			// Wait the game state is ready to start.
+			// Wait for the game state ready to start.
 			if !g.gameState.CanStart() {
 				return nil
 			}
@@ -134,7 +134,7 @@ func (g *GameScene) Update(sceneSwitcher SceneSwitcher) error {
 		}, ebiten.MaxTPS()/2))
 		g.sequence.AddTask(func() error {
 			addGameLoopTasks()
-			// Execute the queued task immediately.
+			// Execute the queued tasks immediately.
 			return TaskEndedAndContinue
 		})
 	}
